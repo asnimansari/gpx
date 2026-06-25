@@ -217,24 +217,100 @@ gpx convert map.kml -o track.gpx
 
 ## Library
 
-The library crate is published as `gpx_rs`. Add it as a dependency:
+The library crate is published as `gpx_rs` on crates.io.
 
 ```toml
 [dependencies]
-gpx_rs = { path = "path/to/gpx-rs" }
+gpx-rs = "0.1"
 ```
+
+### Parse a GPX file
 
 ```rust
-use gpx_rs::{Gpx, WaypointPath};
+use gpx_rs::{parse, parse_file, Gpx};
 
-let gpx = Gpx::parse_file("track.gpx")?;
-let path = WaypointPath::from(&gpx.tracks[0].segments[0]);
+// From a file
+let gpx = parse_file("track.gpx")?;
 
-println!("distance: {} m", path.total_distance());
-println!("duration: {:?}", path.duration());
+// From XML text
+let gpx = Gpx::parse(&xml)?;
+let gpx = parse(&xml)?; // same as Gpx::parse
 ```
 
-See [AGENTS.md](AGENTS.md) for API details, statistics semantics, and extension support.
+### Path statistics
+
+Use `WaypointPath` for distance, duration, speed, and elevation on a connected sequence of points:
+
+```rust
+use gpx_rs::{parse_file, WaypointPath};
+
+let gpx = parse_file("track.gpx")?;
+
+// From a track segment, route, or slice of waypoints
+let path = WaypointPath::from(&gpx.tracks[0].segments[0]);
+// let path = WaypointPath::from(&gpx.routes[0]);
+// let path = WaypointPath::from_slice(&gpx.waypoints);
+
+println!("distance: {:.1} m", path.total_distance());
+println!("duration: {:?}", path.duration());           // needs timestamps
+println!("avg speed: {:.2} m/s", path.average_speed().unwrap_or(0.0));
+println!("ascent: {:.1} m", path.total_ascent());
+println!("descent: {:.1} m", path.total_descent());
+```
+
+Statistics are also available directly on `Route`, `TrackSegment`, and `Track`:
+
+```rust
+let route = &gpx.routes[0];
+println!("route distance: {:.1} m", route.total_distance());
+```
+
+### Strava / Garmin extensions
+
+```rust
+use gpx_rs::parse_file;
+
+let gpx = parse_file("run.gpx")?;
+let point = &gpx.tracks[0].segments[0].points[0];
+
+println!("hr: {:?}", point.heart_rate());
+println!("cadence: {:?}", point.cadence());
+println!("power: {:?} W", point.power_watts());
+```
+
+### Validate, edit, and write
+
+```rust
+use gpx_rs::{parse_file, simplify, to_string, validate_file, write_file};
+
+let gpx = parse_file("track.gpx")?;
+
+// Schema validation
+let result = validate_file("track.gpx")?;
+if !result.is_valid() {
+    for issue in &result.issues {
+        eprintln!("{issue}");
+    }
+}
+
+// Transform and write
+let simplified = simplify(&gpx, 5.0)?;
+write_file(&simplified, "out.gpx", true)?;
+
+// Or serialize to a string
+let xml = to_string(&simplified, true);
+```
+
+### Convert formats
+
+```rust
+use gpx_rs::convert_file;
+
+convert_file("track.gpx", "track.geojson", None, None)?;
+convert_file("route.geojson", "route.gpx", None, None)?;
+```
+
+See [AGENTS.md](AGENTS.md) for full API details, statistics semantics, and extension support.
 
 ## Development
 
