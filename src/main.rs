@@ -1,3 +1,7 @@
 //! GPX manipulation CLI.
 
-fn main() {}
+mod cli;
+
+fn main() -> std::process::ExitCode {
+    cli::run()
+}

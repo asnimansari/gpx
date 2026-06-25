@@ -3,8 +3,15 @@
 pub mod gpx;
 
 pub use gpx::{
-    AnalysisOptions, Bounds, Copyright, Email, Extensions, Fix, Gpx, Link, Metadata, ParseError,
-    Person, Point, PointSegment, ProfilePoint, Route, SpeedProfilePoint, Track, TrackSegment,
+    convert_file, crop, detect_format, filter_points, gather, merge, merge_with_creator,
+    print_human, read_geojson, read_gpx, read_kml, reduce_precision, reverse, shift_time,
+    simplify, smooth, smooth_with_options, split, strip_extensions, strip_metadata, to_string,
+    trim, validate_file, validate_str, write_file, write_geojson, write_kml, AnalysisOptions,
+    Bounds, BoundsInfo, ConvertError, Copyright, ElevationInfo, Email, Extensions, Fix, Gpx,
+    GpxInfo, GPXTPTX_NS_V1, GPXTPTX_NS_V2, GPXX_NS_V3, GPPXPX_NS_V1, InvalidGpxError, Link,
+    Metadata, OperationError, ParseError, Person, Point, PointSegment, PowerExtension,
+    ProfilePoint, Route, RouteInfo, Severity, SmoothOptions, SpeedProfilePoint,
+    StripMetadataFields, Track, TrackExtension, TrackInfo, TrackPointExtension, TrackSegment, ValidationIssue, ValidationResult,
     Waypoint, WaypointPath,
 };
 

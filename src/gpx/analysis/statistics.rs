@@ -61,19 +61,9 @@ macro_rules! point_container_stats {
                 WaypointPath::from(self).total_distance()
             }
 
-            /// Alias for [`total_distance`](Self::total_distance).
-            pub fn distance(&self) -> f64 {
-                self.total_distance()
-            }
-
             /// Elapsed time from the first to the last timestamped point.
-            pub fn duration(&self) -> Option<Duration> {
-                WaypointPath::from(self).duration()
-            }
-
-            /// Alias for [`duration`](Self::duration).
             pub fn total_duration(&self) -> Option<Duration> {
-                self.duration()
+                WaypointPath::from(self).duration()
             }
 
             /// Time spent moving (legs above the moving-speed threshold).
@@ -84,11 +74,6 @@ macro_rules! point_container_stats {
             /// Average speed over the full duration, in m/s.
             pub fn average_speed(&self) -> Option<f64> {
                 WaypointPath::from(self).average_speed()
-            }
-
-            /// Alias for [`average_speed`](Self::average_speed).
-            pub fn speed(&self) -> Option<f64> {
-                self.average_speed()
             }
 
             /// Average speed over moving time only, in m/s.
@@ -116,11 +101,6 @@ macro_rules! point_container_stats {
                 WaypointPath::from(self).average_elevation()
             }
 
-            /// Alias for [`average_elevation`](Self::average_elevation).
-            pub fn elevation(&self) -> Option<f64> {
-                self.average_elevation()
-            }
-
             /// Highest elevation among points with elevation data.
             pub fn max_elevation(&self) -> Option<f64> {
                 WaypointPath::from(self).max_elevation()
@@ -132,13 +112,8 @@ macro_rules! point_container_stats {
             }
 
             /// Elevation range from lowest to highest point with elevation data.
-            pub fn elevation_difference(&self) -> Option<f64> {
-                WaypointPath::from(self).elevation_difference()
-            }
-
-            /// Alias for [`elevation_difference`](Self::elevation_difference).
             pub fn diff_elevation(&self) -> Option<f64> {
-                self.elevation_difference()
+                WaypointPath::from(self).elevation_difference()
             }
 
             /// Total uphill elevation gain between consecutive elevation-known points.
@@ -295,13 +270,8 @@ impl Track {
             .sum()
     }
 
-    /// Alias for [`total_distance`](Self::total_distance).
-    pub fn distance(&self) -> f64 {
-        self.total_distance()
-    }
-
     /// Sum of per-segment durations.
-    pub fn duration(&self) -> Option<Duration> {
+    pub fn total_duration(&self) -> Option<Duration> {
         let durations: Vec<Duration> = WaypointPath::from_track(self)
             .iter()
             .filter_map(WaypointPath::duration)
@@ -311,11 +281,6 @@ impl Track {
         } else {
             Some(durations.into_iter().sum())
         }
-    }
-
-    /// Alias for [`duration`](Self::duration).
-    pub fn total_duration(&self) -> Option<Duration> {
-        self.duration()
     }
 
     /// Sum of per-segment moving durations.
@@ -333,17 +298,12 @@ impl Track {
 
     /// Average speed over the full track duration, in m/s.
     pub fn average_speed(&self) -> Option<f64> {
-        let secs = self.duration()?.as_secs_f64();
+        let secs = self.total_duration()?.as_secs_f64();
         if secs > 0.0 {
             Some(self.total_distance() / secs)
         } else {
             None
         }
-    }
-
-    /// Alias for [`average_speed`](Self::average_speed).
-    pub fn speed(&self) -> Option<f64> {
-        self.average_speed()
     }
 
     /// Average speed over moving time only, in m/s.
@@ -395,11 +355,6 @@ impl Track {
         }
     }
 
-    /// Alias for [`average_elevation`](Self::average_elevation).
-    pub fn elevation(&self) -> Option<f64> {
-        self.average_elevation()
-    }
-
     /// Highest elevation across all segments.
     pub fn max_elevation(&self) -> Option<f64> {
         WaypointPath::from_track(self)
@@ -417,13 +372,8 @@ impl Track {
     }
 
     /// Elevation range across the track.
-    pub fn elevation_difference(&self) -> Option<f64> {
-        Some(self.max_elevation()? - self.min_elevation()?)
-    }
-
-    /// Alias for [`elevation_difference`](Self::elevation_difference).
     pub fn diff_elevation(&self) -> Option<f64> {
-        self.elevation_difference()
+        Some(self.max_elevation()? - self.min_elevation()?)
     }
 
     /// Total uphill gain summed across segments.

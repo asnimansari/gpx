@@ -66,13 +66,9 @@ fn route_statistics_match_waypoint_path() {
 
     assert_eq!(route.len(), 3);
     assert_eq!(route[0].lat, 0.0);
-    assert_eq!(route.distance(), route.total_distance());
-    assert_eq!(route.duration(), Some(Duration::from_secs(20)));
-    assert_eq!(route.total_duration(), route.duration());
+    assert_eq!(route.total_duration(), Some(Duration::from_secs(20)));
     assert_eq!(route.total_ascent(), Some(3.0));
     assert_eq!(route.diff_elevation(), Some(3.0));
-    assert_eq!(route.elevation(), route.average_elevation());
-    assert_eq!(route.speed(), route.average_speed());
     assert!(route.bounds().is_some());
     assert_eq!(route.speed_profile().len(), 2);
     assert_eq!(route.elevation_profile().len(), 3);
@@ -117,7 +113,7 @@ fn track_aggregates_segment_statistics() {
     assert_eq!(track.len(), 2);
     assert_eq!(track[0].len(), 2);
     assert!(track.total_distance() > 0.0);
-    assert_eq!(track.duration(), Some(Duration::from_secs(20)));
+    assert_eq!(track.total_duration(), Some(Duration::from_secs(20)));
     assert_eq!(track.total_ascent(), Some(10.0));
     assert_eq!(track.total_descent(), Some(10.0));
     assert_eq!(track.elevation_profile().len(), 3);
@@ -125,7 +121,7 @@ fn track_aggregates_segment_statistics() {
 }
 
 #[test]
-fn gpx_metadata_accessors_and_parse_file() {
+fn gpx_metadata_and_parse_file() {
     let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="gpx-rs">
   <metadata>
@@ -136,12 +132,16 @@ fn gpx_metadata_accessors_and_parse_file() {
 </gpx>"#;
     let gpx = Gpx::parse(xml).expect("GPX should parse");
 
-    assert_eq!(gpx.name(), Some("Sample GPX"));
-    assert_eq!(gpx.desc(), Some("A sample GPX file for testing"));
-    assert!(gpx.bounds().is_some());
+    let metadata = gpx.metadata.as_ref().expect("metadata should exist");
+    assert_eq!(metadata.name.as_deref(), Some("Sample GPX"));
+    assert_eq!(metadata.desc.as_deref(), Some("A sample GPX file for testing"));
+    assert!(metadata.bounds.is_some());
 
     let path = std::env::temp_dir().join("gpx-rs-statistics-test.gpx");
     fs::write(&path, xml).expect("write temp gpx");
     let from_file = Gpx::parse_file(&path).expect("parse_file should work");
-    assert_eq!(from_file.name(), gpx.name());
+    assert_eq!(
+        from_file.metadata.as_ref().and_then(|m| m.name.as_deref()),
+        metadata.name.as_deref()
+    );
 }

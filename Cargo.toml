@@ -2,18 +2,45 @@
 name = "gpx-rs"
 version = "0.1.0"
 edition = "2021"
-description = "GPX manipulation library and CLI"
+rust-version = "1.96"
+authors = ["Asnim Ansari <asnim96@gmail.com>"]
+description = "GPX 1.1 parsing, validation, path analytics, and CLI tools"
 readme = "README.md"
+license = "MIT"
+repository = "https://github.com/asnimansari/gpx"
+homepage = "https://github.com/asnimansari/gpx"
+documentation = "https://docs.rs/gpx-rs"
+keywords = ["gpx", "gps", "geo", "geojson", "kml"]
+categories = ["parser-implementations", "command-line-utilities", "science::geo"]
+exclude = [
+    "AGENTS.md",
+    "Makefile",
+]
 
 [lib]
 name = "gpx_rs"
 path = "src/lib.rs"
 
 [[bin]]
-name = "gpx-rs"
+name = "gpx"
 path = "src/main.rs"
+required-features = ["cli"]
+
+[features]
+default = ["cli"]
+cli = ["dep:clap"]
 
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["std", "serde"] }
+clap = { version = "4", features = ["derive"], optional = true }
 quick-xml = { version = "0.37", features = ["serialize"] }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
+
+[package.metadata.docs.rs]
+all-features = true
