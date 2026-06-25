@@ -1,7 +1,11 @@
+pub mod analysis;
+
 mod error;
+mod geo;
 mod parse;
 pub mod types;
 
+pub use analysis::{AnalysisOptions, ProfilePoint, SpeedProfilePoint, WaypointPath};
 pub use error::ParseError;
 pub use types::{
     Bounds, Copyright, Email, Extensions, Fix, Gpx, Link, Metadata, Person, Point,

@@ -3,8 +3,9 @@
 pub mod gpx;
 
 pub use gpx::{
-    Bounds, Copyright, Email, Extensions, Fix, Gpx, Link, Metadata, ParseError, Person, Point,
-    PointSegment, Route, Track, TrackSegment, Waypoint,
+    AnalysisOptions, Bounds, Copyright, Email, Extensions, Fix, Gpx, Link, Metadata, ParseError,
+    Person, Point, PointSegment, ProfilePoint, Route, SpeedProfilePoint, Track, TrackSegment,
+    Waypoint, WaypointPath,
 };
 
 /// Parse a GPX document from XML text.
