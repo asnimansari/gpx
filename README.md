@@ -4,11 +4,19 @@ A Rust library and CLI for reading, validating, editing, and converting GPX file
 
 ## Installation
 
+Install the CLI from crates.io:
+
+```bash
+cargo install gpx-rs
+```
+
+This installs the `gpx` binary. Build from source instead:
+
 ```bash
 cargo install --path .
 ```
 
-Or build locally:
+Or build locally without installing:
 
 ```bash
 cargo build --release
