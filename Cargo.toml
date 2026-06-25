@@ -1,0 +1,18 @@
+[package]
+name = "gpx-rs"
+version = "0.1.0"
+edition = "2021"
+description = "GPX manipulation library and CLI"
+readme = "README.md"
+
+[lib]
+name = "gpx_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gpx-rs"
+path = "src/main.rs"
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+quick-xml = "0.37"
