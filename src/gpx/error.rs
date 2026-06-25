@@ -2,7 +2,7 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum ParseError {
-    Xml(quick_xml::Error),
+    De(quick_xml::DeError),
     MissingAttribute { element: &'static str, attribute: &'static str },
     InvalidAttribute { element: &'static str, attribute: &'static str, value: String },
     InvalidTime(String),
@@ -13,7 +13,7 @@ pub enum ParseError {
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Xml(err) => write!(f, "XML error: {err}"),
+            Self::De(err) => write!(f, "GPX deserialization error: {err}"),
             Self::MissingAttribute { element, attribute } => {
                 write!(f, "missing attribute `{attribute}` on `<{element}>`")
             }
@@ -37,20 +37,14 @@ impl fmt::Display for ParseError {
 impl std::error::Error for ParseError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Xml(err) => Some(err),
+            Self::De(err) => Some(err),
             _ => None,
         }
     }
 }
 
-impl From<quick_xml::Error> for ParseError {
-    fn from(err: quick_xml::Error) -> Self {
-        Self::Xml(err)
-    }
-}
-
-impl From<quick_xml::events::attributes::AttrError> for ParseError {
-    fn from(err: quick_xml::events::attributes::AttrError) -> Self {
-        Self::Xml(err.into())
+impl From<quick_xml::DeError> for ParseError {
+    fn from(err: quick_xml::DeError) -> Self {
+        Self::De(err)
     }
 }

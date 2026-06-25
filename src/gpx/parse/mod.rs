@@ -1,234 +1,18 @@
-mod components;
-mod xml;
-
-use quick_xml::events::{BytesStart, Event};
-use quick_xml::Reader;
-
-use components::{
-    parse_extensions, parse_metadata, parse_route_track_child, parse_waypoint_child,
-};
-use xml::{attr_f64, attr_value, is_local_name, local_name, skip_element};
 use crate::gpx::error::ParseError;
-use crate::gpx::types::{Gpx, Route, Track, TrackSegment, Waypoint};
+use crate::gpx::types::Gpx;
 
+const GPX_NS: &str = "http://www.topografix.com/GPX/1/1";
+
+/// Parse a GPX document from XML text using Serde deserialization.
 pub fn parse_gpx(data: &str) -> Result<Gpx, ParseError> {
-    let mut reader = Reader::from_str(data);
-    reader.config_mut().trim_text(true);
-
-    let mut buf = Vec::new();
-    let mut gpx = Gpx::default();
-
-    loop {
-        match reader.read_event_into(&mut buf) {
-            Ok(Event::Start(e)) if is_local_name(e.name(), b"gpx") => {
-                let start = e.into_owned();
-                gpx.version = attr_value(&start, "version")?;
-                gpx.creator = attr_value(&start, "creator")?;
-                parse_gpx_content(&mut reader, &mut buf, &mut gpx)?;
-            }
-            Ok(Event::Eof) => break,
-            Ok(_) => {}
-            Err(err) => return Err(err.into()),
-        }
-        buf.clear();
-    }
-
-    Ok(gpx)
+    quick_xml::de::from_str(data)
+        .or_else(|_| quick_xml::de::from_str(&strip_default_namespace(data)))
+        .map_err(ParseError::from)
 }
 
-fn parse_gpx_content(
-    reader: &mut Reader<&[u8]>,
-    buf: &mut Vec<u8>,
-    gpx: &mut Gpx,
-) -> Result<(), ParseError> {
-    loop {
-        match reader.read_event_into(buf) {
-            Ok(Event::Start(e)) => {
-                let start = e.into_owned();
-                match local_name(start.name()) {
-                    b"metadata" => gpx.metadata = Some(parse_metadata(reader, buf, &start)?),
-                    b"wpt" => gpx.waypoints.push(parse_waypoint(reader, buf, &start, "wpt")?),
-                    b"rte" => gpx.routes.push(parse_route(reader, buf, &start)?),
-                    b"trk" => gpx.tracks.push(parse_track(reader, buf, &start)?),
-                    b"extensions" => gpx.extensions = Some(parse_extensions(reader, buf, &start)?),
-                    _ => skip_element(reader, buf, &start)?,
-                }
-            }
-            Ok(Event::Empty(e)) if local_name(e.name()) == b"wpt" => {
-                gpx.waypoints.push(parse_empty_waypoint(&e.into_owned(), "wpt")?);
-            }
-            Ok(Event::End(e)) if is_local_name(e.name(), b"gpx") => break,
-            Ok(Event::Eof) => return Err(ParseError::UnexpectedEof),
-            Ok(_) => {}
-            Err(err) => return Err(err.into()),
-        }
-        buf.clear();
-    }
-
-    Ok(())
-}
-
-fn parse_route(
-    reader: &mut Reader<&[u8]>,
-    buf: &mut Vec<u8>,
-    _start: &BytesStart<'_>,
-) -> Result<Route, ParseError> {
-    let mut route = Route::default();
-
-    loop {
-        match reader.read_event_into(buf) {
-            Ok(Event::Start(e)) => {
-                let child = e.into_owned();
-                if local_name(child.name()) == b"rtept" {
-                    route.points.push(parse_waypoint(reader, buf, &child, "rtept")?);
-                } else if !parse_route_track_child(
-                    reader,
-                    buf,
-                    &child,
-                    "rte",
-                    &mut route.name,
-                    &mut route.cmt,
-                    &mut route.desc,
-                    &mut route.src,
-                    &mut route.links,
-                    &mut route.number,
-                    &mut route.route_type,
-                    &mut route.extensions,
-                )? {
-                    skip_element(reader, buf, &child)?;
-                }
-            }
-            Ok(Event::Empty(e)) if local_name(e.name()) == b"rtept" => {
-                route
-                    .points
-                    .push(parse_empty_waypoint(&e.into_owned(), "rtept")?);
-            }
-            Ok(Event::End(e)) if is_local_name(e.name(), b"rte") => break,
-            Ok(Event::Eof) => return Err(ParseError::UnexpectedEof),
-            Ok(_) => {}
-            Err(err) => return Err(err.into()),
-        }
-        buf.clear();
-    }
-
-    Ok(route)
-}
-
-fn parse_track(
-    reader: &mut Reader<&[u8]>,
-    buf: &mut Vec<u8>,
-    _start: &BytesStart<'_>,
-) -> Result<Track, ParseError> {
-    let mut track = Track::default();
-
-    loop {
-        match reader.read_event_into(buf) {
-            Ok(Event::Start(e)) => {
-                let child = e.into_owned();
-                if local_name(child.name()) == b"trkseg" {
-                    track.segments.push(parse_track_segment(reader, buf)?);
-                } else if !parse_route_track_child(
-                    reader,
-                    buf,
-                    &child,
-                    "trk",
-                    &mut track.name,
-                    &mut track.cmt,
-                    &mut track.desc,
-                    &mut track.src,
-                    &mut track.links,
-                    &mut track.number,
-                    &mut track.track_type,
-                    &mut track.extensions,
-                )? {
-                    skip_element(reader, buf, &child)?;
-                }
-            }
-            Ok(Event::End(e)) if is_local_name(e.name(), b"trk") => break,
-            Ok(Event::Eof) => return Err(ParseError::UnexpectedEof),
-            Ok(_) => {}
-            Err(err) => return Err(err.into()),
-        }
-        buf.clear();
-    }
-
-    Ok(track)
-}
-
-fn parse_track_segment(
-    reader: &mut Reader<&[u8]>,
-    buf: &mut Vec<u8>,
-) -> Result<TrackSegment, ParseError> {
-    let mut segment = TrackSegment::default();
-
-    loop {
-        match reader.read_event_into(buf) {
-            Ok(Event::Start(e)) => {
-                let child = e.into_owned();
-                match local_name(child.name()) {
-                    b"trkpt" => {
-                        segment
-                            .points
-                            .push(parse_waypoint(reader, buf, &child, "trkpt")?);
-                    }
-                    b"extensions" => {
-                        segment.extensions = Some(parse_extensions(reader, buf, &child)?);
-                    }
-                    _ => skip_element(reader, buf, &child)?,
-                }
-            }
-            Ok(Event::Empty(e)) if local_name(e.name()) == b"trkpt" => {
-                segment
-                    .points
-                    .push(parse_empty_waypoint(&e.into_owned(), "trkpt")?);
-            }
-            Ok(Event::End(e)) if is_local_name(e.name(), b"trkseg") => break,
-            Ok(Event::Eof) => return Err(ParseError::UnexpectedEof),
-            Ok(_) => {}
-            Err(err) => return Err(err.into()),
-        }
-        buf.clear();
-    }
-
-    Ok(segment)
-}
-
-fn parse_waypoint(
-    reader: &mut Reader<&[u8]>,
-    buf: &mut Vec<u8>,
-    start: &BytesStart<'_>,
-    element: &'static str,
-) -> Result<Waypoint, ParseError> {
-    let mut waypoint = Waypoint::new(
-        attr_f64(start, element, "lat")?,
-        attr_f64(start, element, "lon")?,
-    );
-
-    loop {
-        match reader.read_event_into(buf) {
-            Ok(Event::Start(e)) => {
-                let child = e.into_owned();
-                parse_waypoint_child(reader, buf, &child, &mut waypoint, element)?;
-            }
-            Ok(Event::End(e)) if is_local_name(e.name(), element.as_bytes()) => break,
-            Ok(Event::Eof) => return Err(ParseError::UnexpectedEof),
-            Ok(_) => {}
-            Err(err) => return Err(err.into()),
-        }
-        buf.clear();
-    }
-
-    Ok(waypoint)
-}
-
-fn parse_empty_waypoint(
-    start: &BytesStart<'_>,
-    element: &'static str,
-) -> Result<Waypoint, ParseError> {
-    Ok(Waypoint::new(
-        attr_f64(start, element, "lat")?,
-        attr_f64(start, element, "lon")?,
-    ))
+fn strip_default_namespace(xml: &str) -> String {
+    xml.replace(&format!(r#" xmlns="{GPX_NS}""#), "")
+        .replace(&format!(" xmlns='{GPX_NS}'"), "")
 }
 
 #[cfg(test)]
@@ -391,12 +175,6 @@ mod tests {
 </gpx>"#;
 
         let err = parse_gpx(xml).unwrap_err();
-        assert!(matches!(
-            err,
-            ParseError::MissingAttribute {
-                element: "wpt",
-                attribute: "lat"
-            }
-        ));
+        assert!(matches!(err, ParseError::De(_)));
     }
 }

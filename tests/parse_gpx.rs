@@ -65,7 +65,7 @@ fn rejects_invalid_latitude() {
     let err = Gpx::parse(xml).unwrap_err();
     assert!(matches!(
         err,
-        ParseError::InvalidAttribute {
+        ParseError::De(_) | ParseError::InvalidAttribute {
             element: "wpt",
             attribute: "lat",
             ..
