@@ -12,3 +12,8 @@ pub use gpx::{
 pub fn parse(data: &str) -> Result<Gpx, ParseError> {
     gpx::parse(data)
 }
+
+/// Parse a GPX document from a file path.
+pub fn parse_file(path: impl AsRef<std::path::Path>) -> Result<Gpx, ParseError> {
+    Gpx::parse_file(path)
+}

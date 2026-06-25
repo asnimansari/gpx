@@ -1,5 +1,6 @@
 mod options;
 mod profile;
+mod statistics;
 mod waypoint_path;
 
 pub use options::AnalysisOptions;

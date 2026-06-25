@@ -3,6 +3,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum ParseError {
     De(quick_xml::DeError),
+    Io(std::io::Error),
     MissingAttribute { element: &'static str, attribute: &'static str },
     InvalidAttribute { element: &'static str, attribute: &'static str, value: String },
     InvalidTime(String),
@@ -14,6 +15,7 @@ impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::De(err) => write!(f, "GPX deserialization error: {err}"),
+            Self::Io(err) => write!(f, "GPX I/O error: {err}"),
             Self::MissingAttribute { element, attribute } => {
                 write!(f, "missing attribute `{attribute}` on `<{element}>`")
             }
@@ -38,6 +40,7 @@ impl std::error::Error for ParseError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::De(err) => Some(err),
+            Self::Io(err) => Some(err),
             _ => None,
         }
     }
@@ -46,5 +49,11 @@ impl std::error::Error for ParseError {
 impl From<quick_xml::DeError> for ParseError {
     fn from(err: quick_xml::DeError) -> Self {
         Self::De(err)
+    }
+}
+
+impl From<std::io::Error> for ParseError {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(err)
     }
 }

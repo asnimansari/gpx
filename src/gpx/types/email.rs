@@ -1,3 +1,5 @@
+use std::fmt::{self, Display};
+
 use serde::Deserialize;
 
 /// An email address split into id and domain (`emailType` in GPX 1.1).
@@ -11,4 +13,10 @@ pub struct Email {
     /// Domain part of the email address (after `@`).
     #[serde(rename = "@domain")]
     pub domain: String,
+}
+
+impl Display for Email {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}@{}", self.id, self.domain)
+    }
 }
