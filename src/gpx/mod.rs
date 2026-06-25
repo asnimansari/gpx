@@ -3,16 +3,10 @@ mod parse;
 pub mod types;
 
 pub use error::ParseError;
-pub use types::{Route, Track, TrackSegment, Waypoint};
-
-/// The root element of a GPX document.
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct Gpx {
-    pub version: Option<String>,
-    pub waypoints: Vec<Waypoint>,
-    pub routes: Vec<Route>,
-    pub tracks: Vec<Track>,
-}
+pub use types::{
+    Bounds, Copyright, Email, Extensions, Fix, Gpx, Link, Metadata, Person, Point,
+    PointSegment, Route, Track, TrackSegment, Waypoint,
+};
 
 impl Gpx {
     /// Parse a GPX document from XML text.

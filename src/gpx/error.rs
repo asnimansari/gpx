@@ -6,6 +6,7 @@ pub enum ParseError {
     MissingAttribute { element: &'static str, attribute: &'static str },
     InvalidAttribute { element: &'static str, attribute: &'static str, value: String },
     InvalidTime(String),
+    InvalidValue { element: &'static str, value: String },
     UnexpectedEof,
 }
 
@@ -25,6 +26,9 @@ impl fmt::Display for ParseError {
                 "invalid attribute `{attribute}` on `<{element}>`: `{value}`"
             ),
             Self::InvalidTime(value) => write!(f, "invalid GPX time: `{value}`"),
+            Self::InvalidValue { element, value } => {
+                write!(f, "invalid value for `<{element}>`: `{value}`")
+            }
             Self::UnexpectedEof => write!(f, "unexpected end of GPX document"),
         }
     }
